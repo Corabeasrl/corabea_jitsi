@@ -1,0 +1,7 @@
+[Unit]
+Description=Corabea — safety-net upload of Jigasi transcriber WAVs to S3
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flock -n /run/jitsi-transcripts-upload.lock /opt/jitsi/transcripts/upload.sh

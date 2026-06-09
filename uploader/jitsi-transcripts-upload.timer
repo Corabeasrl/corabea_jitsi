@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the Corabea transcripts->S3 safety-net upload every 30 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=30min
+AccuracySec=30s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,13 @@
+services:
+    null-stt:
+        # Speaks the Vosk websocket protocol with empty replies and loads NO model
+        # -> CPU/RAM ~0. Only there to let the Jigasi transcriber start and record
+        # the WAV; the draft transcript is discarded (real transcription = Whisper
+        # on a separate server, from S3). Built from ./nullstt.
+        # Jigasi reaches it via JIGASI_TRANSCRIBER_VOSK_URL=ws://null-stt:2700.
+        image: corabea/null-stt:latest
+        restart: ${RESTART_POLICY:-unless-stopped}
+        expose:
+            - '2700'
+        networks:
+            meet.jitsi:

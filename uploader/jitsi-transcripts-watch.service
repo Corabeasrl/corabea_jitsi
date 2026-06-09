@@ -1,0 +1,13 @@
+[Unit]
+Description=Corabea — inotify watcher: upload Jigasi transcriber WAVs to S3 on file close
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+ExecStart=/opt/jitsi/transcripts/watch.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

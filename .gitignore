@@ -1,0 +1,8 @@
+# Never commit secrets or runtime artifacts
+.env
+*.log
+# Local Vosk model dirs (not used anymore; null-STT replaces them)
+vosk-model-*/
+# Editor / OS noise
+.DS_Store
+*.swp
