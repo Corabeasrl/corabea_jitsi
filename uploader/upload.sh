@@ -24,7 +24,7 @@ set -uo pipefail
 JITSI_DIR="/opt/jitsi"
 ENV_FILE="${JITSI_DIR}/.env"
 TRANSCRIPTS_DIR="${JITSI_DIR}/.jitsi-meet-cfg/transcripts"
-MC="${JITSI_DIR}/.jitsi-meet-cfg/jibri/mc"
+MC="${JITSI_DIR}/transcripts/mc"
 MC_ALIAS="corabea"
 LOG="${JITSI_DIR}/transcripts/upload.log"
 MIN_AGE_MIN="${MIN_AGE_MIN:-2}"   # sweep mode: only files idle > this many minutes
