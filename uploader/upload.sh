@@ -76,6 +76,17 @@ upload_one() {
     dir="$(dirname "$wav")"
     base="$(basename "$wav")"
     txt="$(sibling_txt "$wav")"
+
+    # Skip empty/near-empty recordings (e.g. a participant who joined and left
+    # instantly): useless audio, and ffmpeg can't encode them. Discard locally.
+    if [ "$(stat -c%s "$wav" 2>/dev/null || echo 0)" -lt "${MIN_WAV_BYTES:-1024}" ]; then
+        log "skip empty/tiny wav ${base} ($(stat -c%s "$wav" 2>/dev/null) bytes) — discarding"
+        rm -f "$wav"
+        [ -n "$txt" ] && rm -f "$txt"
+        rmdir "$dir" 2>/dev/null
+        return 0
+    fi
+
     sub="$(subfolder_for "$txt")"
 
     upfile="$wav"; upbase="$base"
