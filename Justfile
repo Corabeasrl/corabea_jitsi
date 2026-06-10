@@ -12,22 +12,10 @@ install-jitsi:
 
 build:
     docker build -t corabea/null-stt:latest null-stt
+    docker build -t corabea/transcript-uploader:latest uploader
 
-install-uploader:
-    command -v inotifywait >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y inotify-tools)
-    mkdir -p {{jitsi}}/transcripts
-    test -x {{jitsi}}/transcripts/mc || (curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o {{jitsi}}/transcripts/mc && chmod +x {{jitsi}}/transcripts/mc)
-    cp uploader/upload.sh uploader/watch.sh {{jitsi}}/transcripts/
-    chmod +x {{jitsi}}/transcripts/upload.sh {{jitsi}}/transcripts/watch.sh
-    cp uploader/jitsi-transcripts-watch.service uploader/jitsi-transcripts-upload.service uploader/jitsi-transcripts-upload.timer {{jitsi}}/transcripts/
-    sudo ln -sf {{jitsi}}/transcripts/jitsi-transcripts-watch.service /etc/systemd/system/jitsi-transcripts-watch.service
-    sudo ln -sf {{jitsi}}/transcripts/jitsi-transcripts-upload.service /etc/systemd/system/jitsi-transcripts-upload.service
-    sudo ln -sf {{jitsi}}/transcripts/jitsi-transcripts-upload.timer /etc/systemd/system/jitsi-transcripts-upload.timer
-    sudo systemctl daemon-reload
-    sudo systemctl enable --now jitsi-transcripts-watch.service jitsi-transcripts-upload.timer
-
-deploy: (build) (install-uploader)
-    sudo mkdir -p {{cfg}}/prosody/prosody-plugins-custom {{cfg}}/web
+deploy: (build)
+    sudo mkdir -p {{cfg}}/prosody/prosody-plugins-custom {{cfg}}/web {{cfg}}/transcripts
     sudo cp prosody/mod_corabea_call_events.lua prosody/mod_token_moderation.lua {{cfg}}/prosody/prosody-plugins-custom/
     sudo cp web/corabea-logo.png web/custom-head.html web/custom-title.html web/custom-config.js web/custom-interface_config.js {{cfg}}/web/
     cp compose/corabea.yml {{jitsi}}/corabea.yml

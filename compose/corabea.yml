@@ -6,6 +6,18 @@ services:
             - '2700'
         networks:
             meet.jitsi:
+    
+    transcript-uploader:
+        image: corabea/transcript-uploader:latest
+        restart: ${RESTART_POLICY:-unless-stopped}
+        volumes:
+            - ${CONFIG}/transcripts:/transcripts
+        environment:
+            - S3_HOST
+            - S3_BUCKET
+            - OPUS_BITRATE=32k
+        networks:
+            meet.jitsi:
 
     prosody:
         environment:

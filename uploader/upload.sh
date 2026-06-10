@@ -21,27 +21,27 @@
 #
 set -uo pipefail
 
-JITSI_DIR="/opt/jitsi"
-ENV_FILE="${JITSI_DIR}/.env"
-TRANSCRIPTS_DIR="${JITSI_DIR}/.jitsi-meet-cfg/transcripts"
-MC="${JITSI_DIR}/transcripts/mc"
-MC_ALIAS="corabea"
-LOG="${JITSI_DIR}/transcripts/upload.log"
-MIN_AGE_MIN="${MIN_AGE_MIN:-2}"   # sweep mode: only files idle > this many minutes
-S3_PREFIX="recordings"            # same bucket folder as the Jibri recordings
-TXT_WAIT_TRIES=12                 # event mode: poll up to ~6s for the sibling .txt
+JITSI_DIR="${JITSI_DIR:-/opt/jitsi}"
+ENV_FILE="${ENV_FILE:-${JITSI_DIR}/.env}"
+TRANSCRIPTS_DIR="${TRANSCRIPTS_DIR:-${JITSI_DIR}/.jitsi-meet-cfg/transcripts}"
+MC="${MC:-${JITSI_DIR}/transcripts/mc}"
+MC_ALIAS="${MC_ALIAS:-corabea}"
+LOG="${LOG:-${JITSI_DIR}/transcripts/upload.log}"
+MIN_AGE_MIN="${MIN_AGE_MIN:-2}"
+S3_PREFIX="${S3_PREFIX:-recordings}"
+TXT_WAIT_TRIES=12
 
 log() { echo "$(date -Is) [upload] $*" >> "$LOG" 2>/dev/null; }
 
-# S3 endpoint + credentials come from the jitsi .env (same as finalize.sh).
-S3_HOST="$(grep -E '^S3_HOST=' "$ENV_FILE" | cut -d= -f2-)"
-S3_BUCKET="$(grep -E '^S3_BUCKET=' "$ENV_FILE" | cut -d= -f2-)"
+# S3 endpoint + creds: prefer the env (container), else read from the jitsi .env.
+[ -z "${S3_HOST:-}" ]   && [ -f "$ENV_FILE" ] && S3_HOST="$(grep -E '^S3_HOST=' "$ENV_FILE" | cut -d= -f2-)"
+[ -z "${S3_BUCKET:-}" ] && [ -f "$ENV_FILE" ] && S3_BUCKET="$(grep -E '^S3_BUCKET=' "$ENV_FILE" | cut -d= -f2-)"
 S3_BUCKET="${S3_BUCKET:-corabea}"
-export MC_HOST_corabea="$S3_HOST"
+export MC_HOST_corabea="${S3_HOST:-}"
 
-[ -n "$S3_HOST" ]         || { log "ERROR: S3_HOST empty in ${ENV_FILE}"; exit 1; }
-[ -x "$MC" ]              || { log "ERROR: mc not found/executable at ${MC}"; exit 1; }
-[ -d "$TRANSCRIPTS_DIR" ] || { log "ERROR: transcripts dir missing"; exit 0; }
+[ -n "${S3_HOST:-}" ]      || { log "ERROR: S3_HOST not set (env or ${ENV_FILE})"; exit 1; }
+command -v "$MC" >/dev/null || { log "ERROR: mc not found ($MC)"; exit 1; }
+[ -d "$TRANSCRIPTS_DIR" ]  || { log "ERROR: transcripts dir missing ($TRANSCRIPTS_DIR)"; exit 0; }
 
 # Path of the sibling transcript .txt in the wav's folder. In the event path the
 # txt is written just after the wav closes, so poll briefly for it.
@@ -65,29 +65,48 @@ subfolder_for() {
     printf '%s' "$room" | sha256sum | cut -c1-16
 }
 
-# Upload one WAV under its room-hash subfolder, then delete the local wav + txt.
+# Upload one WAV under its room-hash subfolder, then delete the local files.
+# The WAV is compressed to Opus (16 kHz mono) before upload to cut bandwidth +
+# storage ~25x; transcription is unaffected (Whisper runs at 16 kHz). Falls back
+# to the raw WAV if ffmpeg is unavailable or encoding fails.
 upload_one() {
     local wav="$1"
     [ -f "$wav" ] || return 0
-    local dir base txt sub target
+    local dir base txt sub upfile upbase target
     dir="$(dirname "$wav")"
     base="$(basename "$wav")"
     txt="$(sibling_txt "$wav")"
     sub="$(subfolder_for "$txt")"
-    if [ -n "$sub" ]; then
-        target="${MC_ALIAS}/${S3_BUCKET}/${S3_PREFIX}/${sub}/${base}"
+
+    upfile="$wav"; upbase="$base"
+    if command -v ffmpeg >/dev/null 2>&1; then
+        local opus="${wav%.wav}.opus"
+        if ffmpeg -nostdin -y -hide_banner -loglevel error -i "$wav" \
+                  -ac 1 -ar 16000 -c:a libopus -b:a "${OPUS_BITRATE:-32k}" "$opus" 2>>"$LOG"; then
+            upfile="$opus"; upbase="$(basename "$opus")"
+        else
+            log "WARN: opus encode failed for ${base} — uploading raw wav"
+            rm -f "$opus"
+        fi
     else
-        target="${MC_ALIAS}/${S3_BUCKET}/${S3_PREFIX}/${base}"
-        log "WARN: room unknown for ${base} — uploading without call subfolder"
+        log "WARN: ffmpeg not found — uploading raw wav (install ffmpeg to compress)"
     fi
-    log "uploading ${base} ($(stat -c%s "$wav") bytes) -> ${target}"
-    if "$MC" --quiet cp "$wav" "$target" >> "$LOG" 2>&1; then
-        log "OK: uploaded ${base} — removing local wav + transcript"
-        rm -f "$wav"
+
+    if [ -n "$sub" ]; then
+        target="${MC_ALIAS}/${S3_BUCKET}/${S3_PREFIX}/${sub}/${upbase}"
+    else
+        target="${MC_ALIAS}/${S3_BUCKET}/${S3_PREFIX}/${upbase}"
+        log "WARN: room unknown for ${upbase} — uploading without call subfolder"
+    fi
+    log "uploading ${upbase} ($(stat -c%s "$upfile") bytes) -> ${target}"
+    if "$MC" --quiet cp "$upfile" "$target" >> "$LOG" 2>&1; then
+        log "OK: uploaded ${upbase} — removing local files + transcript"
+        rm -f "$wav" "$upfile"
         [ -n "$txt" ] && rm -f "$txt"
         if rmdir "$dir" 2>/dev/null; then log "removed empty session dir"; fi
     else
-        log "WARN: upload failed for ${base} — keeping local for next run"
+        log "WARN: upload failed for ${upbase} — keeping wav for next run"
+        [ "$upfile" != "$wav" ] && rm -f "$upfile"
     fi
 }
 

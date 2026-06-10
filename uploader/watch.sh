@@ -12,10 +12,10 @@
 #
 set -uo pipefail
 
-TRANSCRIPTS_DIR="/opt/jitsi/.jitsi-meet-cfg/transcripts"   # where Jigasi writes WAVs
-UPLOAD="/opt/jitsi/transcripts/upload.sh"
-LOCK="/run/jitsi-transcripts-upload.lock"
-LOG="/opt/jitsi/transcripts/upload.log"
+TRANSCRIPTS_DIR="${TRANSCRIPTS_DIR:-/opt/jitsi/.jitsi-meet-cfg/transcripts}"
+UPLOAD="${UPLOAD:-/opt/jitsi/transcripts/upload.sh}"
+LOCK="${LOCK:-/run/jitsi-transcripts-upload.lock}"
+LOG="${LOG:-/opt/jitsi/transcripts/upload.log}"
 
 log() { echo "$(date -Is) [watch] $*" >> "$LOG" 2>/dev/null; }
 
