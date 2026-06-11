@@ -23,8 +23,14 @@ services:
         environment:
             - CORABEA_CALL_EVENTS_URL
             - CORABEA_CALL_EVENTS_SECRET
+        
+        ports:
+            - '10.10.0.2:5222:5222'
 
     web:
+        environment:
+            - ENABLE_COLIBRI_WEBSOCKET=1
+            - ENABLE_COLIBRI_WEBSOCKET_UNSAFE_REGEX=1
         volumes:
             - ${CONFIG}/web/corabea-logo.png:/usr/share/jitsi-meet/images/corabea-logo.png:Z
             - ${CONFIG}/web/corabea-logo.png:/usr/share/jitsi-meet/images/apple-touch-icon.png:Z
