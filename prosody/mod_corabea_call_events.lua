@@ -141,10 +141,18 @@ end
 -- also avoids restarting at call teardown, when humans are leaving too).
 local function arm_transcription(room)
     timer.add_task(3, function()
+        local humans = human_occupant_count(room);
         if not room.corabea_transcription_started
             and room.corabea_moderator_jid
-            and human_occupant_count(room) >= 2 then
+            and humans >= 2 then
             start_transcription(room, room.corabea_moderator_jid);
+        else
+            module:log("info",
+                "corabea: arm_transcription skip room=%s started=%s mod_jid=%s humans=%d",
+                room.jid,
+                tostring(room.corabea_transcription_started),
+                tostring(room.corabea_moderator_jid),
+                humans);
         end
         return nil;
     end);
@@ -175,9 +183,12 @@ module:hook("muc-occupant-joined", function(event)
         occupant_count = human_occupant_count(event.room),
         timestamp = os.time(),
     });
-    -- Auto-start transcription once both humans are present (no user action),
-    -- but only if we know the moderator's JID to send the request from.
-    if human_occupant_count(event.room) >= 2 and event.room.corabea_moderator_jid then
+    -- Auto-start transcription whenever the preconditions might now be met:
+    -- either we just learned the moderator JID (operator joined late), or we
+    -- just reached 2 humans. arm_transcription() defers 3s and re-checks both
+    -- conditions, so calling it eagerly on every relevant join is safe and
+    -- avoids the bug where a late-joining operator never triggered the dial.
+    if event.room.corabea_moderator_jid then
         arm_transcription(event.room);
     end
 end);
