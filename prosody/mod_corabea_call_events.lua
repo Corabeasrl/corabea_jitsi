@@ -21,6 +21,12 @@ local new_uuid = require "util.uuid".generate;
 
 local API_URL = os.getenv("CORABEA_CALL_EVENTS_URL");
 local API_SECRET = os.getenv("CORABEA_CALL_EVENTS_SECRET");
+local AUTO_TRANSCRIPTION = (function()
+    local v = os.getenv("CORABEA_AUTO_TRANSCRIPTION");
+    if v == nil then return true; end
+    v = v:lower();
+    return not (v == "false" or v == "0" or v == "no" or v == "");
+end)();
 local ROOM_PREFIX = "appointment-";
 
 if not API_URL or API_URL == "" then
@@ -111,6 +117,9 @@ end
 -- "dial" IQ the web client sends on "Start transcription", so transcription
 -- (and thus the WAV recording) starts automatically with no user action.
 local function start_transcription(room, from_jid)
+    if not AUTO_TRANSCRIPTION then
+        return;
+    end
     if room.corabea_transcription_started then
         return;
     end
@@ -244,4 +253,5 @@ module:hook("muc-room-destroyed", function(event)
     });
 end);
 
-module:log("info", "mod_corabea_call_events loaded (url=%s)", API_URL);
+module:log("info", "mod_corabea_call_events loaded (url=%s auto_transcription=%s)",
+    API_URL, tostring(AUTO_TRANSCRIPTION));
