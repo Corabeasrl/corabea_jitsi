@@ -1,0 +1,12 @@
+services:
+  coturn:
+    image: coturn/coturn:4.6
+    restart: ${RESTART_POLICY:-unless-stopped}
+    network_mode: host
+    volumes:
+      - ./coturn/turnserver.conf:/etc/turnserver.conf:ro
+    command:
+      - "-c"
+      - "/etc/turnserver.conf"
+      - "--static-auth-secret=${TURN_CREDENTIALS}"
+      - "--realm=${PUBLIC_DOMAIN}"
