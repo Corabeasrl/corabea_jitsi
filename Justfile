@@ -17,7 +17,7 @@ build:
 deploy: (build)
     sudo mkdir -p {{cfg}}/prosody/prosody-plugins-custom {{cfg}}/web {{cfg}}/transcripts
     sudo cp prosody/mod_corabea_call_events.lua prosody/mod_token_moderation.lua {{cfg}}/prosody/prosody-plugins-custom/
-    sudo cp web/corabea-logo.png web/custom-head.html web/custom-title.html web/custom-config.js web/custom-interface_config.js {{cfg}}/web/
+    sudo cp web/corabea-logo.png web/custom-head.html web/custom-title.html web/custom-close.html web/custom-config.js web/custom-interface_config.js {{cfg}}/web/
     cp compose/corabea.yml {{jitsi}}/corabea.yml
     cp compose/coturn.yml {{jitsi}}/coturn.yml
     sudo mkdir -p {{jitsi}}/coturn

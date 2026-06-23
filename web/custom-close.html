@@ -1,0 +1,60 @@
+<html>
+<head>
+    <!--#include virtual="/base.html" -->
+    <link rel="stylesheet" href="css/all.css"/>
+    <!--#include virtual="/title.html" -->
+    <script><!--#include virtual="/interface_config.js" --></script>
+    <script src="static/close.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #ffffff;
+            color: #1f1f1f;
+            font-family: "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .cb-wrap {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 24px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .cb-logo {
+            max-width: 220px;
+            height: auto;
+            margin-bottom: 48px;
+        }
+        .cb-title {
+            font-size: 40px;
+            font-weight: 500;
+            margin: 0 0 16px;
+            line-height: 1.2;
+            color: #1f1f1f;
+        }
+        .cb-sub {
+            font-size: 18px;
+            color: #5f6368;
+            margin: 0;
+            line-height: 1.5;
+        }
+        @media (max-width: 520px) {
+            .cb-logo { max-width: 160px; margin-bottom: 32px; }
+            .cb-title { font-size: 28px; }
+            .cb-sub { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cb-wrap">
+        <img class="cb-logo" src="images/corabea-logo.png" alt="Corabea"/>
+        <h1 class="cb-title">La riunione è terminata</h1>
+        <p class="cb-sub">Grazie per aver utilizzato Corabea Meet.</p>
+    </div>
+</body>
+</html>

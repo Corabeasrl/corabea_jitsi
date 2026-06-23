@@ -6,7 +6,7 @@ services:
             - '2700'
         networks:
             meet.jitsi:
-    
+
     transcript-uploader:
         image: corabea/transcript-uploader:latest
         restart: ${RESTART_POLICY:-unless-stopped}
@@ -24,7 +24,6 @@ services:
             - CORABEA_CALL_EVENTS_URL
             - CORABEA_CALL_EVENTS_SECRET
             - CORABEA_AUTO_TRANSCRIPTION
-        
         ports:
             - '10.10.0.2:5222:5222'
 
@@ -37,6 +36,9 @@ services:
             - ${CONFIG}/web/corabea-logo.png:/usr/share/jitsi-meet/images/apple-touch-icon.png:Z
             - ${CONFIG}/web/custom-head.html:/usr/share/jitsi-meet/head.html:Z
             - ${CONFIG}/web/custom-title.html:/usr/share/jitsi-meet/title.html:Z
+            - ${CONFIG}/web/custom-close.html:/usr/share/jitsi-meet/static/close.html:Z
+            - ${CONFIG}/web/custom-close.html:/usr/share/jitsi-meet/static/close2.html:Z
+            - ${CONFIG}/web/custom-close.html:/usr/share/jitsi-meet/static/close3.html:Z
         labels:
             traefik.enable: "true"
             traefik.docker.network: "traefik"
