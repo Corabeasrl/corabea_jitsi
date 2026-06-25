@@ -24,6 +24,7 @@ services:
             - CORABEA_CALL_EVENTS_URL
             - CORABEA_CALL_EVENTS_SECRET
             - CORABEA_AUTO_TRANSCRIPTION
+            - CORABEA_AUTO_TRANSCRIPTION_TYPES
         ports:
             - '10.10.0.2:5222:5222'
 

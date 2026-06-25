@@ -27,6 +27,18 @@ local AUTO_TRANSCRIPTION = (function()
     v = v:lower();
     return not (v == "false" or v == "0" or v == "no" or v == "");
 end)();
+-- Allowlist of call types for which auto-transcription should start (values
+-- are appointment_types.code). Empty set = no types enabled. The type is read
+-- from the operator's JWT at context.room.call_type.
+local AUTO_TRANSCRIPTION_TYPES = (function()
+    local set = {};
+    local v = os.getenv("CORABEA_AUTO_TRANSCRIPTION_TYPES");
+    if v == nil or v == "" then return set; end
+    for token in v:gmatch("[^,%s]+") do
+        set[token:upper()] = true;
+    end
+    return set;
+end)();
 local ROOM_PREFIX = "appointment-";
 
 if not API_URL or API_URL == "" then
@@ -120,6 +132,16 @@ local function start_transcription(room, from_jid)
     if not AUTO_TRANSCRIPTION then
         return;
     end
+    -- Gate by call type. The type comes from the operator's JWT and was
+    -- stored on room.corabea_call_type at join time. If missing or not in
+    -- the allowlist, transcription can still be started manually.
+    local call_type = room.corabea_call_type;
+    if not call_type or not AUTO_TRANSCRIPTION_TYPES[call_type] then
+        module:log("info",
+            "corabea: auto-transcription skipped for %s (type=%s not in allowlist)",
+            room.jid, tostring(call_type));
+        return;
+    end
     if room.corabea_transcription_started then
         return;
     end
@@ -183,6 +205,16 @@ module:hook("muc-occupant-joined", function(event)
     -- occupant's REAL jid (like mod_jibri_autostart does), not the MUC nick.
     if role == "operator" then
         event.room.corabea_moderator_jid = event.occupant.jid;
+        -- Call type from the JWT (corabea_api signs context.room.call_type
+        -- with the appointment_types.code value, e.g. "CALL_CONOSCITIVA").
+        -- We use context.room because Jitsi's mod_auth_token only exposes
+        -- the standard namespaces (user/group/features/room); custom
+        -- top-level keys never reach Prosody. We capture it at the
+        -- operator's join — the only token authoritative for the room.
+        local context_room = event.origin and event.origin.jitsi_meet_context_room;
+        if context_room and type(context_room.call_type) == "string" then
+            event.room.corabea_call_type = context_room.call_type:upper();
+        end
     end
     post_event({
         event = "join",
@@ -253,5 +285,13 @@ module:hook("muc-room-destroyed", function(event)
     });
 end);
 
-module:log("info", "mod_corabea_call_events loaded (url=%s auto_transcription=%s)",
-    API_URL, tostring(AUTO_TRANSCRIPTION));
+local function allowlist_repr()
+    local parts = {};
+    for k, _ in pairs(AUTO_TRANSCRIPTION_TYPES) do
+        parts[#parts + 1] = k;
+    end
+    return table.concat(parts, ",");
+end
+
+module:log("info", "mod_corabea_call_events loaded (url=%s auto_transcription=%s types=[%s])",
+    API_URL, tostring(AUTO_TRANSCRIPTION), allowlist_repr());
