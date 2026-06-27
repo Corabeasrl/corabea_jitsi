@@ -23,6 +23,7 @@ deploy: (build)
     sudo mkdir -p {{jitsi}}/coturn
     sudo cp coturn/turnserver.conf {{jitsi}}/coturn/turnserver.conf
     cd {{jitsi}} && {{compose}} up -d --remove-orphans
+    cd {{jitsi}} && {{compose}} up -d --force-recreate web
     timeout 120 sh -c 'until docker logs jitsi-prosody-1 2>&1 | grep -q "All users registered"; do sleep 2; done'
     docker restart jitsi-transcriber-1
 

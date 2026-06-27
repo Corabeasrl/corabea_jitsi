@@ -1,0 +1,17 @@
+http:
+  middlewares:
+    jitsi-nocache:
+      headers:
+        customResponseHeaders:
+          Cache-Control: "no-store"
+  routers:
+    jitsi-config-nocache:
+      rule: "Host(`meet.corabea.it`) && (Path(`/config.js`) || Path(`/custom-config.js`) || Path(`/interface_config.js`))"
+      entryPoints:
+        - websecure
+      priority: 1000
+      service: jitsi@docker
+      middlewares:
+        - jitsi-nocache
+      tls:
+        certResolver: le

@@ -1,0 +1,14 @@
+tcp:
+  routers:
+    turns:
+      entryPoints:
+        - websecure
+      rule: "HostSNI(`turn.corabea.it`)"
+      tls:
+        certResolver: le
+      service: coturn-tcp
+  services:
+    coturn-tcp:
+      loadBalancer:
+        servers:
+          - address: "172.18.0.1:3478"
